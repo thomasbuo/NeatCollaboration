@@ -18,8 +18,10 @@ public class ConnectionGene {
 
 	public ConnectionGene(NodeGene input, NodeGene output) {
 		innovationNumber = ai.getAndIncrement();
+		//todo: initialize weight.
 		this.input = input;
 		this.output = output;
+		
 	}
 
 	private ConnectionGene(NodeGene input, NodeGene output, int innovationNumber, float weight) {
