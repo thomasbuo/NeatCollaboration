@@ -4,9 +4,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import data.Constants;
 
-public class ConnectionGene {
+public class ConnectionGene implements Comparable<ConnectionGene> {
 
 	private static final double WEIGHT_PROB = 0.9;
+	private static final float LOWER_WEIGHT_BOUND = -1f, UPPER_WEIGHT_BOUND = 1f;
 
 	private int innovationNumber;
 	public static AtomicInteger ai = new AtomicInteger();
@@ -18,10 +19,9 @@ public class ConnectionGene {
 
 	public ConnectionGene(NodeGene input, NodeGene output) {
 		innovationNumber = ai.getAndIncrement();
-		//todo: initialize weight.
+		this.weight = LOWER_WEIGHT_BOUND + (UPPER_WEIGHT_BOUND - LOWER_WEIGHT_BOUND) * Constants.rand.nextFloat();
 		this.input = input;
 		this.output = output;
-		
 	}
 
 	private ConnectionGene(NodeGene input, NodeGene output, int innovationNumber, float weight) {
@@ -39,7 +39,7 @@ public class ConnectionGene {
 
 	public boolean mutateWeightUniform() {
 		if (Constants.rand.nextDouble() < WEIGHT_PROB) {
-			// todo
+			//TODO: mutate weight uniform
 			return true;
 		}
 		return false;
@@ -86,5 +86,14 @@ public class ConnectionGene {
 			return cg.innovationNumber == innovationNumber;
 		}
 		return false;
+	}
+
+	@Override
+	public int compareTo(ConnectionGene cg) {
+		if (innovationNumber < cg.getInnovationNumber())
+			return -1;
+		if (innovationNumber > cg.getInnovationNumber())
+			return 1;
+		return 0;
 	}
 }
