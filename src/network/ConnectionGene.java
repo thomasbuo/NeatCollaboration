@@ -18,7 +18,7 @@ public class ConnectionGene {
 
 	public ConnectionGene(NodeGene input, NodeGene output) {
 		innovationNumber = ai.getAndIncrement();
-		//todo: initialize weight.
+		//TODO: initialize weight.
 		this.input = input;
 		this.output = output;
 		
