@@ -4,25 +4,32 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 import data.Constants;
+import network.NodeGene.Layer;
 
 public class Genome {
 
+	public static final float NODE_PROB = 0.03f;
+	public static final float CONNECTION_PROB = 0.05f;
+	
 	public static final float EXCESS_WEIGHT = 1;
 	public static final float DISJOINT_WEIGHT = 1;
 	public static final float MATCHING_WEIGHT = 0.4f;
 	
+	private ArrayList<NodeGene> nodes;
 	private ArrayList<ConnectionGene> connections;
 	private float fitness;
 
 	public Genome(ArrayList<ConnectionGene> connections) {
 		this.connections = connections;
 	}
-
+	
 	public Genome() {
-		connections = new ArrayList<>();
+		this.connections = new ArrayList<>();
+		this.nodes = new ArrayList<>();
 	}
 
 	public Genome breed(Genome p) {
@@ -152,6 +159,85 @@ public class Genome {
 		
 		return excessCount * EXCESS_WEIGHT + disjointCount * DISJOINT_WEIGHT + weightAverage * MATCHING_WEIGHT;
 	}
+	
+	public void mutateNodeGene() {
+		// Determine whether node should be added
+		if (Constants.rand.nextFloat() >= NODE_PROB)
+			return;
+		
+		ArrayList<NodeGene> unusedNodes = new ArrayList<>();
+		List<NodeGene> coreNodes = Core.nodes.entrySet().stream().map(e -> e.getValue()).collect(Collectors.toList());
+		
+		// Collect all nodes NOT in this genome, but in core
+		for (NodeGene ng : coreNodes) {
+			if (!nodes.contains(ng)) {
+				unusedNodes.add(ng);
+			}
+		}
+		NodeGene ng = null;
+		if (unusedNodes.isEmpty()) {
+			// Create a new node and add it to the core list
+			ng = new NodeGene(Layer.HIDDEN);
+			Core.nodes.put(ng.getInnovationNumber(), ng);
+			nodes.add(ng);
+		} else {
+			// Select first node in the list (it's random due to entrySet's random ordering)
+			nodes.add(ng = unusedNodes.get(0));
+		}
+		
+		ConnectionGene cg = connections.get(Constants.rand.nextInt(connections.size()));
+		cg.setActive(false);
+		
+		ConnectionGene cg1 = new ConnectionGene(cg.getInput(), ng);
+		cg1.setWeight(1);
+		ConnectionGene cg2 = new ConnectionGene(ng, cg.getOutput());
+		cg2.setWeight(cg.getWeight());
+		
+		connections.add(cg1);
+		connections.add(cg2);
+		Core.connections.put(cg1.getInnovationNumber(), cg1);
+		Core.connections.put(cg2.getInnovationNumber(), cg2);
+	}
+	
+	public void mutateConnectionGene() {
+		// Determine whether connectionGene should be added
+		if (Constants.rand.nextFloat() >= CONNECTION_PROB)
+			return;
+		
+		ArrayList<ConnectionGene> unusedConnections = new ArrayList<>();
+		List<ConnectionGene> coreConnections = Core.connections.entrySet().stream().map(e -> e.getValue()).collect(Collectors.toList());
+		
+		// Collect all connections NOT in this genome, but in core
+		for (ConnectionGene cg : coreConnections) {
+			if (!connections.contains(cg)) {
+				unusedConnections.add(cg);
+			}
+		}
+		
+		if (unusedConnections.isEmpty()) {
+			// Create a new connection and add it to the core list
+			List<NodeGene> startNodes = nodes.stream().filter(n -> n.getLayer() == Layer.HIDDEN || n.getLayer() == Layer.INPUT).collect(Collectors.toList());
+			List<NodeGene> endNodes = nodes.stream().filter(n -> n.getLayer() == Layer.HIDDEN || n.getLayer() == Layer.OUTPUT).collect(Collectors.toList());
+			
+			NodeGene start = startNodes.get(Constants.rand.nextInt(startNodes.size()));
+			NodeGene end = null;
+			for (NodeGene ng : endNodes) {
+				try {
+					coreConnections.stream().filter(c -> c.equals2(start, ng)).findFirst().get();
+				} catch (NoSuchElementException e) {
+					end = ng;
+					break;
+				}
+			}
+			ConnectionGene cg = new ConnectionGene(start, end);
+			Core.connections.put(cg.getInnovationNumber(), cg);
+			connections.add(cg.copy());
+		} else {
+			// Select first connection in the list (it's random due to entrySet's random ordering)
+			connections.add(unusedConnections.get(0).copy());
+		}
+		
+	}
 
 	public float getFitness() {
 		return fitness;
@@ -163,6 +249,18 @@ public class Genome {
 
 	public ArrayList<ConnectionGene> getConnections() {
 		return connections;
+	}
+	
+	public void addConnections(ArrayList<ConnectionGene> connections) {
+		this.connections.addAll(connections);
+	}
+	
+	public void addConnection(ConnectionGene connection) {
+		connections.add(connection);
+	}
+	
+	public ArrayList<NodeGene> getNodes() {
+		return nodes;
 	}
 
 	@Override

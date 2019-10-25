@@ -20,7 +20,7 @@ public class Species {
 	}
 	
 	public boolean kill(Genome g) {
-		//TODO: kill species in global storage
+		//TODO: kill species in global 
 		if (g.equals(leaderGenome)) {
 			setRandomLeader();
 		}
