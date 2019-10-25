@@ -1,6 +1,7 @@
 package network;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -14,22 +15,32 @@ public class Genome {
 
 	public static final float NODE_PROB = 0.03f;
 	public static final float CONNECTION_PROB = 0.05f;
-	
+
 	public static final float EXCESS_WEIGHT = 1;
 	public static final float DISJOINT_WEIGHT = 1;
 	public static final float MATCHING_WEIGHT = 0.4f;
-	
+
 	private ArrayList<NodeGene> nodes;
 	private ArrayList<ConnectionGene> connections;
 	private float fitness;
+	private Core core;
 
-	public Genome(ArrayList<ConnectionGene> connections) {
+	private HashMap<NodeGene, ArrayList<ConnectionGene>> nodeInputs;
+	private HashMap<NodeGene, Float> nodeValues;
+
+	public Genome(Core core, ArrayList<ConnectionGene> connections, ArrayList<NodeGene> nodes,
+			HashMap<NodeGene, ArrayList<ConnectionGene>> nodeInputs) {
+		this.core = core;
 		this.connections = connections;
+		this.nodes = nodes;
+		this.nodeInputs = nodeInputs;
 	}
-	
-	public Genome() {
+
+	public Genome(Core core) {
+		this.core = core;
 		this.connections = new ArrayList<>();
 		this.nodes = new ArrayList<>();
+		this.nodeInputs = new HashMap<>();
 	}
 
 	public Genome breed(Genome p) {
@@ -64,6 +75,7 @@ public class Genome {
 			}
 		}
 
+		HashMap<NodeGene, ArrayList<ConnectionGene>> nodeInputs = new HashMap<>();
 		ArrayList<ConnectionGene> childConnections = new ArrayList<>();
 		for (int kcg : betterParentMatchings.keySet()) {
 			ConnectionGene childCg = betterParentMatchings.get(kcg).copy();
@@ -73,6 +85,12 @@ public class Genome {
 				childCg.setWeight(worseParentMatchings.get(kcg).getWeight());
 			}
 			childConnections.add(childCg);
+
+			NodeGene output = childCg.getOutput();
+			if (!nodeInputs.containsKey(output)) {
+				nodeInputs.put(output, new ArrayList<>());
+			}
+			nodeInputs.get(output).add(childCg);
 		}
 
 		betterParentConnections.removeAll(betterParentMatchings.keySet().stream().map(i -> betterParentMatchings.get(i))
@@ -93,18 +111,22 @@ public class Genome {
 			childConnections.addAll(betterParentConnections);
 		}
 
-		return new Genome(childConnections);
+		ArrayList<NodeGene> nodes = new ArrayList<>();
+		for (NodeGene ng : nodeInputs.keySet())
+			nodes.add(ng);
+
+		return new Genome(core, childConnections, nodes, nodeInputs);
 	}
 
 	public float computeDistance(Genome genome) {
-		
+
 		ArrayList<ConnectionGene> connectionsGenome1 = getConnections();
 		ArrayList<ConnectionGene> connectionsGenome2 = genome.getConnections();
-		
+
 		int maxInnovation = 0;
 		Genome maxGenome = null;
 		Genome minGenome = null;
-		
+
 		for (ConnectionGene cg : connectionsGenome1) {
 			if (cg.getInnovationNumber() > maxInnovation) {
 				maxInnovation = cg.getInnovationNumber();
@@ -119,7 +141,7 @@ public class Genome {
 				minGenome = this;
 			}
 		}
-		
+
 		HashMap<Integer, ConnectionGene> maxGenomeMatchings = new HashMap<>();
 		HashMap<Integer, ConnectionGene> minGenomeMatchings = new HashMap<>();
 		int matchingIndex = 0;
@@ -130,44 +152,47 @@ public class Genome {
 				minGenomeMatchings.put(mingc.getInnovationNumber(), mingc);
 			}
 		}
-		
-		List<ConnectionGene> nonMatchingsConnections1 = minGenome.getConnections().stream().collect(Collectors.toList());
+
+		List<ConnectionGene> nonMatchingsConnections1 = minGenome.getConnections().stream()
+				.collect(Collectors.toList());
 		nonMatchingsConnections1.removeAll(maxGenomeMatchings.values());
-		
+
 		Collections.sort(maxGenome.getConnections());
-		
+
 		int excessCount = 0;
 		for (int i = maxGenome.getConnections().size() - 1; i > 0; i--) {
 			int min = maxGenome.getConnections().get(i - 1).getInnovationNumber();
 			int max = maxGenome.getConnections().get(i).getInnovationNumber();
-			if (minGenome.getConnections().stream().anyMatch(c -> c.getInnovationNumber() > min && c.getInnovationNumber() < max)) {
+			if (minGenome.getConnections().stream()
+					.anyMatch(c -> c.getInnovationNumber() > min && c.getInnovationNumber() < max)) {
 				excessCount = maxGenome.getConnections().size() - 1 - i;
 			}
 		}
-		
+
 		int disjointCount = (minGenome.getConnections().size() - maxGenomeMatchings.size())
-							+ (maxGenome.getConnections().size() - maxGenomeMatchings.size() - excessCount);
-		
+				+ (maxGenome.getConnections().size() - maxGenomeMatchings.size() - excessCount);
+
 		float weightAverage = 0;
 		if (!maxGenomeMatchings.isEmpty()) {
 			float sum = 0;
 			for (Integer innovationKey : maxGenomeMatchings.keySet()) {
-				sum+= Math.abs(maxGenomeMatchings.get(innovationKey).getWeight() - minGenomeMatchings.get(innovationKey).getWeight());
+				sum += Math.abs(maxGenomeMatchings.get(innovationKey).getWeight()
+						- minGenomeMatchings.get(innovationKey).getWeight());
 			}
 			weightAverage = sum / maxGenomeMatchings.size();
 		}
-		
+
 		return excessCount * EXCESS_WEIGHT + disjointCount * DISJOINT_WEIGHT + weightAverage * MATCHING_WEIGHT;
 	}
-	
+
 	public void mutateNodeGene() {
 		// Determine whether node should be added
 		if (Constants.rand.nextFloat() >= NODE_PROB)
 			return;
-		
+
 		ArrayList<NodeGene> unusedNodes = new ArrayList<>();
-		List<NodeGene> coreNodes = Core.nodes.entrySet().stream().map(e -> e.getValue()).collect(Collectors.toList());
-		
+		List<NodeGene> coreNodes = core.nodes.entrySet().stream().map(e -> e.getValue()).collect(Collectors.toList());
+
 		// Collect all nodes NOT in this genome, but in core
 		for (NodeGene ng : coreNodes) {
 			if (!nodes.contains(ng)) {
@@ -178,47 +203,55 @@ public class Genome {
 		if (unusedNodes.isEmpty()) {
 			// Create a new node and add it to the core list
 			ng = new NodeGene(Layer.HIDDEN);
-			Core.nodes.put(ng.getInnovationNumber(), ng);
+			core.nodes.put(ng.getInnovationNumber(), ng);
 			nodes.add(ng);
 		} else {
 			// Select first node in the list (it's random due to entrySet's random ordering)
 			nodes.add(ng = unusedNodes.get(0));
 		}
-		
+
 		ConnectionGene cg = connections.get(Constants.rand.nextInt(connections.size()));
 		cg.setActive(false);
-		
+
 		ConnectionGene cg1 = new ConnectionGene(cg.getInput(), ng);
+		nodeInputs.put(ng, new ArrayList<>());
+		nodeInputs.get(ng).add(cg1);
 		cg1.setWeight(1);
 		ConnectionGene cg2 = new ConnectionGene(ng, cg.getOutput());
+		nodeInputs.get(cg.getOutput()).add(cg2);
 		cg2.setWeight(cg.getWeight());
-		
+
 		connections.add(cg1);
 		connections.add(cg2);
-		Core.connections.put(cg1.getInnovationNumber(), cg1);
-		Core.connections.put(cg2.getInnovationNumber(), cg2);
+		core.connections.put(cg1.getInnovationNumber(), cg1);
+		core.connections.put(cg2.getInnovationNumber(), cg2);
 	}
-	
+
 	public void mutateConnectionGene() {
 		// Determine whether connectionGene should be added
 		if (Constants.rand.nextFloat() >= CONNECTION_PROB)
 			return;
-		
+
 		ArrayList<ConnectionGene> unusedConnections = new ArrayList<>();
-		List<ConnectionGene> coreConnections = Core.connections.entrySet().stream().map(e -> e.getValue()).collect(Collectors.toList());
-		
+		List<ConnectionGene> coreConnections = core.connections.entrySet().stream().map(e -> e.getValue())
+				.collect(Collectors.toList());
+
 		// Collect all connections NOT in this genome, but in core
 		for (ConnectionGene cg : coreConnections) {
 			if (!connections.contains(cg)) {
 				unusedConnections.add(cg);
 			}
 		}
-		
+
 		if (unusedConnections.isEmpty()) {
 			// Create a new connection and add it to the core list
-			List<NodeGene> startNodes = nodes.stream().filter(n -> n.getLayer() == Layer.HIDDEN || n.getLayer() == Layer.INPUT).collect(Collectors.toList());
-			List<NodeGene> endNodes = nodes.stream().filter(n -> n.getLayer() == Layer.HIDDEN || n.getLayer() == Layer.OUTPUT).collect(Collectors.toList());
-			
+			List<NodeGene> startNodes = nodes.stream()
+					.filter(n -> n.getLayer() == Layer.HIDDEN || n.getLayer() == Layer.INPUT)
+					.collect(Collectors.toList());
+			List<NodeGene> endNodes = nodes.stream()
+					.filter(n -> n.getLayer() == Layer.HIDDEN || n.getLayer() == Layer.OUTPUT)
+					.collect(Collectors.toList());
+
 			NodeGene start = startNodes.get(Constants.rand.nextInt(startNodes.size()));
 			NodeGene end = null;
 			for (NodeGene ng : endNodes) {
@@ -230,13 +263,54 @@ public class Genome {
 				}
 			}
 			ConnectionGene cg = new ConnectionGene(start, end);
-			Core.connections.put(cg.getInnovationNumber(), cg);
-			connections.add(cg.copy());
+			core.connections.put(cg.getInnovationNumber(), cg);
+			ConnectionGene cgCopy = cg.copy();
+			connections.add(cgCopy);
+			nodeInputs.get(end).add(cgCopy);
 		} else {
-			// Select first connection in the list (it's random due to entrySet's random ordering)
-			connections.add(unusedConnections.get(0).copy());
+			// Select first connection in the list (it's random due to entrySet's random
+			// ordering)
+			ConnectionGene cgCopy = unusedConnections.get(0).copy();
+			connections.add(cgCopy);
+			nodeInputs.get(cgCopy.getOutput()).add(cgCopy);
+		}
+	}
+
+	public ArrayList<Float> computeOutput(ArrayList<Float> input) {
+		nodeValues = new HashMap<>();
+
+		for (int i = 0; i < input.size(); i++) {
+			nodeValues.put(core.nodes.get(i), input.get(i));
 		}
 		
+		List<NodeGene> outputNodes = nodes.stream().filter(n -> n.getLayer() == Layer.OUTPUT).collect(Collectors.toList());
+
+		ArrayList<Float> outputList = new ArrayList<>();
+		for (NodeGene ng : outputNodes) {
+			computeNodeOutput(ng);
+			outputList.add(nodeValues.get(ng));
+		}
+		return outputList;
+	}
+
+	public void computeNodeOutput(NodeGene ng) {
+		float sum = 0f;
+		for (ConnectionGene cg : nodeInputs.get(ng)) {
+			if (!nodeValues.containsKey(cg.getInput())) {
+				computeNodeOutput(cg.getInput());
+			}
+			sum+= nodeValues.get(cg.getInput()) * cg.getWeight();
+		}
+		if (ng.getLayer() == Layer.HIDDEN) {
+			sum = core.activationFunctionHidden.applyActivation(sum);
+		} else {
+			sum = core.activationFunctionOutput.applyActivation(sum);
+		}
+		nodeValues.put(ng, sum);
+	}
+	
+	public Core getCore() {
+		return core;
 	}
 
 	public float getFitness() {
@@ -250,17 +324,25 @@ public class Genome {
 	public ArrayList<ConnectionGene> getConnections() {
 		return connections;
 	}
-	
+
 	public void addConnections(ArrayList<ConnectionGene> connections) {
 		this.connections.addAll(connections);
 	}
-	
+
 	public void addConnection(ConnectionGene connection) {
 		connections.add(connection);
 	}
-	
+
 	public ArrayList<NodeGene> getNodes() {
 		return nodes;
+	}
+	
+	public void addNode(NodeGene node) {
+		nodes.add(node);
+	}
+	
+	public void addNodes(Collection<NodeGene> nodes) {
+		nodes.addAll(nodes);
 	}
 
 	@Override
