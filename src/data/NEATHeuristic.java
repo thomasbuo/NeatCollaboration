@@ -3,7 +3,7 @@ package data;
 import network.Core;
 import network.Genome;
 
-public abstract class FitnessHeuristic {
+public abstract class NEATHeuristic {
 
 	public abstract float computeFitness(Genome genome);
 	

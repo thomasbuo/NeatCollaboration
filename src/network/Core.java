@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.stream.Collectors;
 
 import data.ActivationFunction;
-import data.FitnessHeuristic;
+import data.NEATHeuristic;
 import network.NodeGene.Layer;
 
 public class Core {
@@ -17,13 +17,13 @@ public class Core {
 	public ActivationFunction activationFunctionHidden;
 	public ActivationFunction activationFunctionOutput;
 	
-	public FitnessHeuristic heuristic;
+	public NEATHeuristic heuristic;
 	
 	private int currentGeneration;
 	
 	public void initialize(int numInputs, int numOutputs, 
 						   ActivationFunction afh, ActivationFunction afo,
-						   FitnessHeuristic heuristic, int populationSize,
+						   NEATHeuristic heuristic, int populationSize,
 						   int maxGeneration) {
 		
 		
