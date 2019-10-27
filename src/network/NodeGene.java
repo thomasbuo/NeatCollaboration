@@ -2,6 +2,12 @@ package network;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Represents a single node used by each {@link Genome} within a {@link Core}
+ * 
+ * @author Siemen Geurts, Thomas van den Broek
+ *
+ */
 public class NodeGene {
 
 	public enum Layer {
@@ -12,10 +18,13 @@ public class NodeGene {
 	public static AtomicInteger ai = new AtomicInteger();
 	private Layer layer;
 	
+	//_________________________________________________________________//
 	// The following fields are for finding loops in a Genome
 	
 	private Integer index, lowlink;
 	private boolean onStack;
+	
+	//_________________________________________________________________//
 	
 	public NodeGene(Layer layer) {
 		innovationNumber = ai.getAndIncrement();

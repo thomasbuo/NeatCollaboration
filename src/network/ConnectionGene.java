@@ -5,6 +5,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import data.Constants;
 
+/**
+ * 
+ * Represents a directed connection (input to output) between two {@link NodeGene}s with a certain weight. Can be active or inactive.
+ * 
+ * @author Siemen Geurts, Thomas van den Broek
+ *
+ */
 public class ConnectionGene implements Comparable<ConnectionGene> {
 	
 	private static final float WEIGHT_PROB = 0.9f;
@@ -21,6 +28,12 @@ public class ConnectionGene implements Comparable<ConnectionGene> {
 	
 	private float weight;
 
+	/**
+	 * Base constructor method for creating a connection between two nodes
+	 * 
+	 * @param input The input node (start point)
+	 * @param output The output node (end point)
+	 */
 	public ConnectionGene(NodeGene input, NodeGene output) {
 		innovationNumber = ai.getAndIncrement();
 		this.input = input;
@@ -29,6 +42,14 @@ public class ConnectionGene implements Comparable<ConnectionGene> {
 		mutateWeightRandom();
 	}
 
+	/**
+	 * Constructor method used for copying another connection
+	 * 
+	 * @param input The original connection's input
+	 * @param output The original connection's output
+	 * @param innovationNumber The innovation number of the original connection
+	 * @param weight The weight of the original connection
+	 */
 	private ConnectionGene(NodeGene input, NodeGene output, int innovationNumber, float weight) {
 		this.input = input;
 		this.output = output;
@@ -36,7 +57,10 @@ public class ConnectionGene implements Comparable<ConnectionGene> {
 		this.active = true;
 		this.weight = weight;
 	}
-
+	
+	/**
+	 * Mutate this connection by mutating its weight
+	 */
 	public void mutate() {
 		// Mutate weight
 		if (!mutateWeightUniform()) {
@@ -44,6 +68,11 @@ public class ConnectionGene implements Comparable<ConnectionGene> {
 		}
 	}
 	
+	/**
+	 * Mutate weight based on some increment or decrement
+	 * 
+	 * @return Whether the connection weight was actually changed
+	 */
 	public boolean mutateWeightUniform() {
 		if (Constants.rand.nextDouble() < WEIGHT_PROB) {
 			float change = UNIFORM_WEIGHT_CHANGE * Constants.rand.nextFloat();
@@ -53,6 +82,9 @@ public class ConnectionGene implements Comparable<ConnectionGene> {
 		return false;
 	}
 
+	/**
+	 * Mutate weight entirely randomly between a lower and upper bound
+	 */
 	public void mutateWeightRandom() {
 		this.weight = LOWER_WEIGHT_BOUND + (UPPER_WEIGHT_BOUND - LOWER_WEIGHT_BOUND) * Constants.rand.nextFloat();
 	}
