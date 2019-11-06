@@ -11,9 +11,12 @@ public class Tarjan {
 	private Genome g;
 	private ArrayList<ArrayList<NodeGene>> SSCs;
 	
-	public boolean containsLoop(Genome g) {
-		SSCs = new ArrayList<>();
+	public Tarjan(Genome g) {
 		this.g = g;
+	}
+	
+	public boolean containsLoop() {
+		SSCs = new ArrayList<>();
 		index = 0;
 		stack = new Stack<>();
 		g.getNodes().forEach(n -> n.reset());

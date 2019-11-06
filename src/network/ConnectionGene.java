@@ -14,6 +14,7 @@ import data.Constants;
  */
 public class ConnectionGene implements Comparable<ConnectionGene> {
 	
+	private static final float MUTATE_PROB = 0.8f;
 	private static final float WEIGHT_PROB = 0.9f;
 	private static final float UNIFORM_WEIGHT_CHANGE = 0.1f;
 	private static final float LOWER_WEIGHT_BOUND = -1f, UPPER_WEIGHT_BOUND = 1f;
@@ -62,6 +63,8 @@ public class ConnectionGene implements Comparable<ConnectionGene> {
 	 * Mutate this connection by mutating its weight
 	 */
 	public void mutate() {
+		if (Constants.rand.nextFloat() >= MUTATE_PROB)
+			return;
 		// Mutate weight
 		if (!mutateWeightUniform()) {
 			mutateWeightRandom();

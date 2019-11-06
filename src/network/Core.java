@@ -2,30 +2,41 @@ package network;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.stream.Collectors;
 
 import data.ActivationFunction;
+import data.BreedMethod;
+import data.KillMethod;
+import data.MutateMethod;
 import data.NEATHeuristic;
 import network.NodeGene.Layer;
 
 public class Core {
 
-	public HashMap<Integer, NodeGene> nodes = new HashMap<>();
-	public HashMap<Integer, ConnectionGene> connections = new HashMap<>();
-	public ArrayList<Genome> genomes = new ArrayList<>();
+	protected HashMap<Integer, NodeGene> nodes = new HashMap<>();
+	protected HashMap<Integer, ConnectionGene> connections = new HashMap<>();
+	protected ArrayList<Genome> genomes = new ArrayList<>();
+	protected ArrayList<Species> species = new ArrayList<>();
 	
-	public ActivationFunction activationFunctionHidden;
-	public ActivationFunction activationFunctionOutput;
+	protected ActivationFunction activationFunctionHidden;
+	protected ActivationFunction activationFunctionOutput;
 	
-	public NEATHeuristic heuristic;
+	protected NEATHeuristic heuristic;
+	
+	private int populationSize;
 	
 	private int currentGeneration;
 	
 	public void initialize(int numInputs, int numOutputs, 
 						   ActivationFunction afh, ActivationFunction afo,
+						   KillMethod killMethod, BreedMethod breedMethod, MutateMethod mutateMethod,
 						   NEATHeuristic heuristic, int populationSize,
 						   int maxGeneration) {
 		
+		this.activationFunctionHidden = afh;
+		this.activationFunctionOutput = afo;
+		this.populationSize = populationSize;
 		
 		for (int i = 0; i < numInputs; i++) {
 			NodeGene n = new NodeGene(Layer.INPUT);
@@ -49,9 +60,30 @@ public class Core {
 				float fitness = heuristic.computeFitness(g);
 				g.setFitness(fitness);
 			}
-			
+			new Speciation(this);
+			killMethod.kill(this);
+			Species s = null;
+			for (Iterator<Species> iterator = species.iterator(); iterator.hasNext(); s = iterator.next()) {
+				if (s.getGenomes().size() == 0) {
+					iterator.remove();
+				}
+			}
+			breedMethod.breed(this);
+			mutateMethod.mutate(this);
 			
 		} while (currentGeneration < maxGeneration && !heuristic.checkStoppingCriteria(this));
+	}
+	
+	public ArrayList<Genome> getGenomes() {
+		return genomes;
+	}
+	
+	public ArrayList<Species> getSpecies() {
+		return species;
+	}
+	
+	public int getPopulationSize() {
+		return populationSize;
 	}
 	 
 }

@@ -17,7 +17,7 @@ import network.NodeGene.Layer;
  * @author Siemen Geurts, Thomas van den Broek
  *
  */
-public class Genome {
+public class Genome implements Comparable<Genome> {
 
 	public static final float NODE_PROB = 0.03f;
 	public static final float CONNECTION_PROB = 0.05f;
@@ -236,6 +236,18 @@ public class Genome {
 
 		return excessCount * EXCESS_WEIGHT + disjointCount * DISJOINT_WEIGHT + weightAverage * MATCHING_WEIGHT;
 	}
+	
+	/**
+	 * Mutates this genome by calling {@link #mutateNodeGene}, {@link #mutateConnectionGene} and mutating each
+	 * {@link ConnectionGene}'s weight.
+	 */
+	public void mutate() {
+		mutateNodeGene();
+		for (ConnectionGene cg : connections) {
+			cg.mutate();
+		}
+		mutateConnectionGene();
+	}
 
 	/**
 	 * Mutates this genome in the sense that a {@link NodeGene} should be added, and to the {@link Core} if applicable
@@ -322,15 +334,27 @@ public class Genome {
 				}
 			}
 			ConnectionGene cg = new ConnectionGene(start, end);
-			core.connections.put(cg.getInnovationNumber(), cg);
 			ConnectionGene cgCopy = cg.copy();
 			connections.add(cgCopy);
+			
+			// Check new network for loops. If it contains loops, skip creation of connection
+			if (new Tarjan(this).containsLoop()) {
+				connections.remove(cgCopy);
+				return;
+			}
+			core.connections.put(cg.getInnovationNumber(), cg);
 			nodeInputs.get(end).add(cgCopy);
 		} else {
 			// Select first connection in the list (it's random due to entrySet's random
 			// ordering)
 			ConnectionGene cgCopy = unusedConnections.get(0).copy();
 			connections.add(cgCopy);
+			
+			// Check new network for loops. If it contains loops, skip creation of connection
+			if (new Tarjan(this).containsLoop()) {
+				connections.remove(cgCopy);
+				return;
+			}
 			nodeInputs.get(cgCopy.getOutput()).add(cgCopy);
 		}
 	}
@@ -424,5 +448,14 @@ public class Genome {
 	@Override
 	public String toString() {
 		return connections.toString();
+	}
+
+	@Override
+	public int compareTo(Genome g) {
+		if (fitness > g.fitness)
+			return 1;
+		if (fitness < g.fitness)
+			return -1;
+		return 0;
 	}
 }
