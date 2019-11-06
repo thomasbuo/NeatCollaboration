@@ -193,6 +193,9 @@ public class Genome implements Comparable<Genome> {
 		HashMap<Integer, ConnectionGene> maxGenomeMatchings = new HashMap<>();
 		HashMap<Integer, ConnectionGene> minGenomeMatchings = new HashMap<>();
 		int matchingIndex = 0;
+		if (maxGenome.getConnections().isEmpty()) {
+			
+		}
 		for (ConnectionGene maxgc : maxGenome.getConnections()) {
 			if ((matchingIndex = minGenome.getConnections().indexOf(maxgc)) >= 0) {
 				maxGenomeMatchings.put(maxgc.getInnovationNumber(), maxgc);
@@ -372,10 +375,8 @@ public class Genome implements Comparable<Genome> {
 		for (int i = 0; i < input.size(); i++) {
 			nodeValues.put(core.nodes.get(i), input.get(i));
 		}
-		
 		//For each output node, find the output and return it
 		List<NodeGene> outputNodes = nodes.stream().filter(n -> n.getLayer() == Layer.OUTPUT).collect(Collectors.toList());
-
 		ArrayList<Float> outputList = new ArrayList<>();
 		for (NodeGene ng : outputNodes) {
 			computeNodeOutput(ng);
@@ -392,6 +393,10 @@ public class Genome implements Comparable<Genome> {
 	private void computeNodeOutput(NodeGene ng) {
 		float sum = 0f;
 		//Loop through all ConnectionGenes which have the current node as output
+		if (nodeInputs.get(ng) == null) {
+			nodeValues.put(ng, 0f);
+			return;
+		}
 		for (ConnectionGene cg : nodeInputs.get(ng)) {
 			//Check if they have already been given a value and if so, use the current ConnectionGene's weight to add to the sum.
 			//If not, recursive call to find that node's value.
@@ -442,7 +447,7 @@ public class Genome implements Comparable<Genome> {
 	}
 	
 	public void addNodes(Collection<NodeGene> nodes) {
-		nodes.addAll(nodes);
+		this.nodes.addAll(nodes);
 	}
 
 	@Override

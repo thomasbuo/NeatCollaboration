@@ -76,7 +76,7 @@ public class NodeGene {
 	
 	@Override
 	public String toString() { 
-		return "NodeGene " + innovationNumber;
+		return "NodeGene " + innovationNumber + " " + layer;
 	}
 	
 	@Override
