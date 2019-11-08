@@ -36,6 +36,7 @@ public class ConnectionGene implements Comparable<ConnectionGene> {
 	 * @param output The output node (end point)
 	 */
 	public ConnectionGene(NodeGene input, NodeGene output) {
+		System.out.println(ai.get());
 		innovationNumber = ai.getAndIncrement();
 		this.input = input;
 		this.output = output;
@@ -127,7 +128,7 @@ public class ConnectionGene implements Comparable<ConnectionGene> {
 	@Override
 	public String toString() {
 		return "ConnectionGene " + innovationNumber + " [" + input.toString() + " - " + output.toString() + " | "
-				+ weight + "]";
+				+ weight + " | " + active + "]";
 	}
 
 	@Override

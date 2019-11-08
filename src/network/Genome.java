@@ -31,12 +31,15 @@ public class Genome implements Comparable<Genome> {
 	private float fitness;
 	private Core core;
 
+	private ArrayList<NodeGene> seenNodes;
 	private HashMap<NodeGene, ArrayList<ConnectionGene>> nodeInputs;
 	private HashMap<NodeGene, Float> nodeValues;
 
 	/**
 	 * Constructor method used for breeding a genome
 	 * 
+	 * @param parent1 The first parent from which this genome was bred
+	 * @param parent2 The second parent from which this genome was bred
 	 * @param core The core from which all variables and information are gained
 	 * @param connections The {@link ConnectionGene}s present in this bred genome
 	 * @param nodes The {@link NodeGene}s used in this bred genome
@@ -97,7 +100,7 @@ public class Genome implements Comparable<Genome> {
 		for (ConnectionGene cg : worseParent.getConnections()) {
 			worseParentConnections.add(cg.copy());
 		}
-
+		
 		//Store for both better parent and worse parent matching genes, they are both required for randomized weight selection
 		HashMap<Integer, ConnectionGene> betterParentMatchings = new HashMap<>();
 		HashMap<Integer, ConnectionGene> worseParentMatchings = new HashMap<>();
@@ -109,7 +112,7 @@ public class Genome implements Comparable<Genome> {
 				worseParentMatchings.put(wpc.getInnovationNumber(), wpc);
 			}
 		}
-
+		
 		//Randomize the weights of the matching ConnectionGenes and generate the child's connections and nodeInputs.
 		HashMap<NodeGene, ArrayList<ConnectionGene>> nodeInputs = new HashMap<>();
 		ArrayList<ConnectionGene> childConnections = new ArrayList<>();
@@ -128,13 +131,13 @@ public class Genome implements Comparable<Genome> {
 			}
 			nodeInputs.get(output).add(childCg);
 		}
-
+		
 		//All ConnectionGenes - matchings = disjoint and excess ConnectionGenes
 		betterParentConnections.removeAll(betterParentMatchings.keySet().stream().map(i -> betterParentMatchings.get(i))
 				.collect(Collectors.toList()));
 		worseParentConnections.removeAll(worseParentMatchings.keySet().stream().map(i -> betterParentMatchings.get(i))
 				.collect(Collectors.toList()));
-
+		
 		if (randomize) {
 			//If randomized, select for each disjoint and excess ConnectionGene whether to add it to the child or not
 			for (ConnectionGene cg : betterParentConnections) {
@@ -149,10 +152,20 @@ public class Genome implements Comparable<Genome> {
 			//If not, add all better parent excess and disjoint ConnectionGenes to the child
 			childConnections.addAll(betterParentConnections);
 		}
-
+		
 		ArrayList<NodeGene> nodes = new ArrayList<>();
-		for (NodeGene ng : nodeInputs.keySet())
+		for (NodeGene ng : this.nodes.stream().filter(n -> n.getLayer() == Layer.INPUT || n.getLayer() == Layer.OUTPUT).collect(Collectors.toList())) {
 			nodes.add(ng);
+		}
+		for (NodeGene ng : nodeInputs.keySet())
+			if (!nodes.contains(ng))
+				nodes.add(ng);
+		
+		for (NodeGene n : nodes) {
+			if (!nodeInputs.containsKey(n)) {
+				nodeInputs.put(n, new ArrayList<>());
+			}
+		}
 		
 		//Generate a child genome and return it
 		return new Genome(core, childConnections, nodes, nodeInputs);
@@ -255,12 +268,17 @@ public class Genome implements Comparable<Genome> {
 	}
 
 	/**
-	 * Mutates this genome in the sense that a {@link NodeGene} should be added, and to the {@link Core} if applicable
+	 * Mutates this genome in the sense that a {@link NodeGene} should be added in the center of a {@link ConnectionGene}
+	 * and to the {@link Core} if applicable
 	 */
 	public void mutateNodeGene() {
 		// Determine whether node should be added
+		if (connections.isEmpty())
+			return;
+			
 		if (Constants.rand.nextFloat() >= NODE_PROB)
 			return;
+		
 
 		ArrayList<NodeGene> unusedNodes = new ArrayList<>();
 		List<NodeGene> coreNodes = core.nodes.entrySet().stream().map(e -> e.getValue()).collect(Collectors.toList());
@@ -282,9 +300,11 @@ public class Genome implements Comparable<Genome> {
 			nodes.add(ng = unusedNodes.get(0));
 		}
 
-		ConnectionGene cg = connections.get(Constants.rand.nextInt(connections.size()));
+		ConnectionGene cg = connections.stream().filter(c -> c.isActive()).collect(Collectors.toList())
+							.get(Constants.rand.nextInt(connections.size()));
 		cg.setActive(false);
 
+		System.out.println("Creating ConnectionGene from " + cg.getInput() + " to " + ng + " 2 " + System.nanoTime());
 		ConnectionGene cg1 = new ConnectionGene(cg.getInput(), ng);
 		nodeInputs.put(ng, new ArrayList<>());
 		nodeInputs.get(ng).add(cg1);
@@ -309,7 +329,9 @@ public class Genome implements Comparable<Genome> {
 			return;
 
 		ArrayList<ConnectionGene> unusedConnections = new ArrayList<>();
-		List<ConnectionGene> coreConnections = core.connections.entrySet().stream().map(e -> e.getValue())
+		List<ConnectionGene> coreConnections = core.connections.entrySet().stream()
+				.filter(e -> nodes.contains(e.getValue().getInput()) && nodes.contains(e.getValue().getOutput()))
+				.map(e -> e.getValue())
 				.collect(Collectors.toList());
 
 		// Collect all connections NOT in this genome, but in core
@@ -319,16 +341,17 @@ public class Genome implements Comparable<Genome> {
 			}
 		}
 
-		if (unusedConnections.isEmpty()) {
+		if (unusedConnections.isEmpty()) {	
 			// Create a new connection and add it to the core list
 			List<NodeGene> startNodes = nodes.stream()
 					.filter(n -> n.getLayer() == Layer.HIDDEN || n.getLayer() == Layer.INPUT)
 					.collect(Collectors.toList());
+			NodeGene start = startNodes.get(Constants.rand.nextInt(startNodes.size()));
 			List<NodeGene> endNodes = nodes.stream()
-					.filter(n -> n.getLayer() == Layer.HIDDEN || n.getLayer() == Layer.OUTPUT)
+					.filter(n -> (n.getLayer() == Layer.HIDDEN || n.getLayer() == Layer.OUTPUT)
+							&& !n.equals(start))
 					.collect(Collectors.toList());
 
-			NodeGene start = startNodes.get(Constants.rand.nextInt(startNodes.size()));
 			NodeGene end = null;
 			for (NodeGene ng : endNodes) {
 				try {
@@ -338,29 +361,28 @@ public class Genome implements Comparable<Genome> {
 					break;
 				}
 			}
-			ConnectionGene cg = new ConnectionGene(start, end);
-			ConnectionGene cgCopy = cg.copy();
-			connections.add(cgCopy);
-			
-			// Check new network for loops. If it contains loops, skip creation of connection
-			if (new Tarjan(this).containsLoop()) {
-				connections.remove(cgCopy);
+			if (end == null)
 				return;
+			// Check for loops. If there is one after addition, do not add
+			if (!containsPath(end, start)) {
+				System.out.println("Now creating ConnectionGene from " + start + " to " + end + " " + System.nanoTime());
+				ConnectionGene cg = new ConnectionGene(start, end);
+				ConnectionGene cgCopy = cg.copy();
+				connections.add(cgCopy);
+				
+				core.connections.put(cg.getInnovationNumber(), cg);
+				nodeInputs.get(end).add(cgCopy);
 			}
-			core.connections.put(cg.getInnovationNumber(), cg);
-			nodeInputs.get(end).add(cgCopy);
 		} else {
 			// Select first connection in the list (it's random due to entrySet's random
 			// ordering)
-			ConnectionGene cgCopy = unusedConnections.get(0).copy();
-			connections.add(cgCopy);
 			
-			// Check new network for loops. If it contains loops, skip creation of connection
-			if (new Tarjan(this).containsLoop()) {
-				connections.remove(cgCopy);
-				return;
+			ConnectionGene cgCopy = unusedConnections.get(0).copy();
+			// Check for loops. If there is one after addition, do not add
+			if (!containsPath(cgCopy.getOutput(), cgCopy.getInput())) {
+				connections.add(cgCopy);
+				nodeInputs.get(cgCopy.getOutput()).add(cgCopy);
 			}
-			nodeInputs.get(cgCopy.getOutput()).add(cgCopy);
 		}
 	}
 
@@ -403,7 +425,11 @@ public class Genome implements Comparable<Genome> {
 			//Check if they have already been given a value and if so, use the current ConnectionGene's weight to add to the sum.
 			//If not, recursive call to find that node's value.
 			if (!nodeValues.containsKey(cg.getInput())) {
-				computeNodeOutput(cg.getInput());
+				try {
+					computeNodeOutput(cg.getInput());					
+				} catch (StackOverflowError|NullPointerException e) {
+					System.out.println(this);
+				}
 			}
 			sum+= nodeValues.get(cg.getInput()) * cg.getWeight();
 		}
@@ -414,6 +440,27 @@ public class Genome implements Comparable<Genome> {
 			sum = core.activationFunctionOutput.applyActivation(sum);
 		}
 		nodeValues.put(ng, sum);
+	}
+	
+	private boolean containsPath(NodeGene start, NodeGene end) {
+		seenNodes = new ArrayList<>();
+		return checkForPath(start, end);
+	}
+	
+	private boolean checkForPath(NodeGene start, NodeGene end) {
+		if (seenNodes.contains(end))
+			return false;
+		seenNodes.add(end);
+		List<NodeGene> parents = nodeInputs.get(end).stream().map(c -> c.getInput()).collect(Collectors.toList());
+		if (parents.contains(start)) {
+			return true;			
+		} else {
+			for (NodeGene p : parents) {
+				if (checkForPath(start, p))
+					return true;
+			}
+		}
+		return false;
 	}
 	
 	public Core getCore() {
@@ -454,7 +501,7 @@ public class Genome implements Comparable<Genome> {
 
 	@Override
 	public String toString() {
-		return connections.toString();
+		return connections.toString() + ", Fitness: " + fitness;
 	}
 
 	@Override

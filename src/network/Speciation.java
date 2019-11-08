@@ -11,13 +11,15 @@ public class Speciation {
 	public static final float range = 15f;
 	private Core core;
 	HashMap<Genome, Float> locations;
+	HashMap<Genome, Float> closestCenterDistances;
 	
 	public Speciation(Core core) {
 		this.core = core;
 		locations = new HashMap<>();
+		closestCenterDistances = new HashMap<>();
 		localize();
 		int k = 1;
-		while (!kMeans(kMeansPP(k))) {			
+		while (!kMeans(kMeansPP(k))) {		
 			k++;
 		}
 	}
@@ -49,24 +51,14 @@ public class Speciation {
 		return (float)Math.abs(locations.get(g1) - locations.get(g2));
 	}
 	
-	private float maxDistance(Genome g) {
-		float maxDist = 0;
-		for (Genome g2 : core.getGenomes()) {
-			float dist = distance(g, g2);
-			if (g != g2 && dist > maxDist)
-				maxDist = dist;
-		}
-		return maxDist;
-	}
-	
 	private ArrayList<Genome> kMeansPP(int k) {
 		ArrayList<Genome> centers = new ArrayList<>();
 		Genome randCenter = core.getGenomes().get(Constants.rand.nextInt(core.getGenomes().size()));
 		Genome closestCenter = randCenter;
 		for (int currK = 0; currK < k; currK++) {
 			float rand = Constants.rand.nextFloat();
-			float maxDistance = maxDistance(closestCenter);
 			float probSum = 0;
+			float cumSum = 0;
 			for (Genome g : core.getGenomes()) {
 				float minDist = Float.MAX_VALUE;
 				for (Genome center : centers) {
@@ -76,13 +68,16 @@ public class Speciation {
 						minDist = dist;
 					}
 				}
-				if (g != closestCenter) {
-					float dist = distance(closestCenter, g);
-					probSum +=  (dist * dist) / (maxDistance * maxDistance);
-					if (probSum < rand) {
-						centers.add(g);
-						break;
-					}
+				closestCenterDistances.put(g, minDist);
+				float dist = distance(g, closestCenter);
+				cumSum += dist * dist;
+			}
+			for (Genome g : core.getGenomes()) {
+				float dist = closestCenterDistances.get(g);
+				probSum += (dist * dist) / cumSum;
+				if (probSum >= rand) {
+					centers.add(g);
+					break;
 				}
 			}
 		}
@@ -96,7 +91,7 @@ public class Speciation {
 		}
 		for(Genome g : core.getGenomes().stream().filter(g2 -> !centers.contains(g2)).collect(Collectors.toList())) {
 			float closestDist = Float.MAX_VALUE;
-			Genome closestCenter = null;
+			Genome closestCenter = centers.get(0);
 			for(Genome center : centers) {
 				float dist = distance(closestCenter, g);
 				if(dist < closestDist) {

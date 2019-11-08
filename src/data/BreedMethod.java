@@ -17,7 +17,7 @@ public enum BreedMethod {
 				Species s = c.getSpecies().get(Constants.rand.nextInt(c.getSpecies().size()));
 				Genome parent1 = selectParent(s);
 				Genome parent2 = null;
-				if (Constants.rand.nextFloat() < INTERSPECIES) {
+				if (c.getSpecies().size() > 1 && Constants.rand.nextFloat() < INTERSPECIES) {
 					Species newS = s;
 					while (newS == s) {
 						newS = c.getSpecies().get(Constants.rand.nextInt(c.getSpecies().size()));
@@ -28,9 +28,11 @@ public enum BreedMethod {
 				}
 				genomes.add(parent1.breed(parent2));
 			}
+			c.getGenomes().addAll(genomes);
 		}
 		
 		private Genome selectParent(Species s) {
+			sum = 0;
 			ArrayList<Genome> genomes = s.getGenomes();
 			genomes.forEach(g -> sum += g.getFitness());
 			float randFitness = Constants.rand.nextFloat() * sum;

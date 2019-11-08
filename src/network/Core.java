@@ -57,20 +57,33 @@ public class Core {
 		currentGeneration = 0;
 		
 		do {
+			System.out.println("Calculating Fitness");
 			for (Genome g : genomes) {
+				System.out.println(g);
 				float fitness = heuristic.computeFitness(g);
 				g.setFitness(fitness);
 			}
+			System.out.println("Fitness Calculated");
+
+			System.out.println("Calculating Species");
 			new Speciation(this);
+			System.out.println("Species Calculated");
+			
+			System.out.println("Kill");
 			killMethod.kill(this);
+			System.out.println("Finished Killing");
 			Species s = null;
-			for (Iterator<Species> iterator = species.iterator(); iterator.hasNext(); s = iterator.next()) {
-				if (s.getGenomes().size() == 0) {
+			for (Iterator<Species> iterator = species.iterator(); iterator.hasNext();) {
+				s = iterator.next();
+				if (s.getGenomes().isEmpty()) {
 					iterator.remove();
 				}
 			}
+			System.out.println("Breed");
 			breedMethod.breed(this);
+			System.out.println("Mutate");
 			mutateMethod.mutate(this);
+			System.out.println("Finished Mutating");
 			
 		} while (currentGeneration < maxGeneration && !heuristic.checkStoppingCriteria(this));
 	}

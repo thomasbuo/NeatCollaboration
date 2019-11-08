@@ -58,10 +58,10 @@ public class Tester {
 					@Override
 					public boolean checkStoppingCriteria(Core core) {
 						Genome best = Collections.max(core.getGenomes());
-						System.out.println(best);
+//						System.out.println(best);
 						return best.getFitness() >= 3.8;
 					}
-		}.initialize(), 100, 20);
+		}.initialize(), 100, 3);
 	}
 	
 }
