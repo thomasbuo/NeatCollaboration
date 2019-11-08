@@ -21,6 +21,7 @@ public class Tarjan {
 		stack = new Stack<>();
 		g.getNodes().forEach(n -> n.reset());
 		for (NodeGene v : g.getNodes()) {
+			System.out.println("tarjan");
 			if (v.getIndex() == null) {
 				strongConnect(v);
 			}

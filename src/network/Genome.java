@@ -188,14 +188,16 @@ public class Genome implements Comparable<Genome> {
 				minGenome = this;
 			}
 		}
+		if(maxGenome == null) {
+			maxGenome = this;
+			minGenome = genome;
+		}		
 
 		//Store for both the genome with the newest and the other genome the ConnectionGenes, stored with innovation number
 		HashMap<Integer, ConnectionGene> maxGenomeMatchings = new HashMap<>();
 		HashMap<Integer, ConnectionGene> minGenomeMatchings = new HashMap<>();
 		int matchingIndex = 0;
-		if (maxGenome.getConnections().isEmpty()) {
-			
-		}
+		
 		for (ConnectionGene maxgc : maxGenome.getConnections()) {
 			if ((matchingIndex = minGenome.getConnections().indexOf(maxgc)) >= 0) {
 				maxGenomeMatchings.put(maxgc.getInnovationNumber(), maxgc);

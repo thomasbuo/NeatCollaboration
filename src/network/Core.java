@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import data.ActivationFunction;
 import data.BreedMethod;
+import data.Constants;
 import data.KillMethod;
 import data.MutateMethod;
 import data.NEATHeuristic;
@@ -33,7 +34,7 @@ public class Core {
 						   KillMethod killMethod, BreedMethod breedMethod, MutateMethod mutateMethod,
 						   NEATHeuristic heuristic, int populationSize,
 						   int maxGeneration) {
-		
+		Constants.initialize();
 		this.activationFunctionHidden = afh;
 		this.activationFunctionOutput = afo;
 		this.populationSize = populationSize;
