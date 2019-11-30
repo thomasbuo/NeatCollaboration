@@ -36,7 +36,8 @@ public class ConnectionGene implements Comparable<ConnectionGene> {
 	 * @param output The output node (end point)
 	 */
 	public ConnectionGene(NodeGene input, NodeGene output) {
-		System.out.println(ai.get());
+		if (input.equals(output))
+			System.exit(0);
 		innovationNumber = ai.getAndIncrement();
 		this.input = input;
 		this.output = output;

@@ -17,7 +17,7 @@ public class Tester {
 
 	public static void main(String[] args) {
 		Core core = new Core();
-		core.initialize(2, 1, ActivationFunction.LINEAR, ActivationFunction.SIGMOID,
+		core.initialize(2, 1, ActivationFunction.LINEAR, ActivationFunction.TANH,
 				KillMethod.BOTTOM_HALF, BreedMethod.PERCENTILE, MutateMethod.PRESERVE_OLD,
 				new NEATHeuristic() {
 					ArrayList<ArrayList<Float>> inputs = new ArrayList<>();
@@ -51,7 +51,8 @@ public class Tester {
 					public float computeFitness(Genome genome) {
 						float errorSum = 0;
 						for (int i = 0; i < inputs.size(); i++) {
-							errorSum += (float)Math.abs(genome.computeOutput(inputs.get(i)).get(0) - outputs.get(i));
+							ArrayList<Float> output = genome.computeOutput(inputs.get(i));
+							errorSum += (float)Math.abs(output.get(0) - outputs.get(i));
 						}
 						return 4 - errorSum;
 					}
@@ -59,9 +60,9 @@ public class Tester {
 					public boolean checkStoppingCriteria(Core core) {
 						Genome best = Collections.max(core.getGenomes());
 //						System.out.println(best);
-						return best.getFitness() >= 3.8;
+						return best.getFitness() >= 3.99999999;
 					}
-		}.initialize(), 100, 3);
+		}.initialize(), 100, 10000000);
 	}
 	
 }

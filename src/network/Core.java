@@ -39,6 +39,8 @@ public class Core {
 		this.activationFunctionOutput = afo;
 		this.populationSize = populationSize;
 		
+		ArrayList<ConnectionGene> baseConnections = new ArrayList<>();
+		
 		for (int i = 0; i < numInputs; i++) {
 			NodeGene n = new NodeGene(Layer.INPUT);
 			nodes.put(n.getInnovationNumber(), n);
@@ -48,8 +50,17 @@ public class Core {
 			nodes.put(n.getInnovationNumber(), n);
 		}
 		
+		nodes.values().stream().filter(n -> n.getLayer() == Layer.INPUT).forEach(n -> {
+			nodes.values().stream().filter(n2 -> n2.getLayer() == Layer.OUTPUT).forEach(n2 -> {
+				ConnectionGene cg = new ConnectionGene(n, n2);
+				connections.put(cg.getInnovationNumber(), cg);
+				baseConnections.add(cg);
+			});
+		});
+		
 		for (int i = 0; i < populationSize; i++) {
 			Genome g = new Genome(this);
+			g.addConnections(baseConnections);
 			genomes.add(g);
 			g.addNodes(nodes.values().stream().collect(Collectors.toList()));
 		}
@@ -59,7 +70,6 @@ public class Core {
 		do {
 			System.out.println("Calculating Fitness");
 			for (Genome g : genomes) {
-				System.out.println(g);
 				float fitness = heuristic.computeFitness(g);
 				g.setFitness(fitness);
 			}
@@ -84,8 +94,18 @@ public class Core {
 			System.out.println("Mutate");
 			mutateMethod.mutate(this);
 			System.out.println("Finished Mutating");
-			
+			currentGeneration++;
 		} while (currentGeneration < maxGeneration && !heuristic.checkStoppingCriteria(this));
+		float maxFitness = Float.MIN_VALUE;
+		Genome best = null;
+		for (Genome g : genomes) {
+			if (g.getFitness() > maxFitness) {
+				maxFitness = g.getFitness();
+				best = g;
+			}
+		}
+		System.out.println("Finished with " + best);
+		heuristic.computeFitness(best);
 	}
 	
 	public ArrayList<Genome> getGenomes() {
