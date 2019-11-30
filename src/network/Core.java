@@ -95,17 +95,28 @@ public class Core {
 			mutateMethod.mutate(this);
 			System.out.println("Finished Mutating");
 			currentGeneration++;
-		} while (currentGeneration < maxGeneration && !heuristic.checkStoppingCriteria(this));
-		float maxFitness = Float.MIN_VALUE;
-		Genome best = null;
-		for (Genome g : genomes) {
-			if (g.getFitness() > maxFitness) {
-				maxFitness = g.getFitness();
-				best = g;
+			//view best of generation
+			float maxFitness = Float.MIN_VALUE;
+			Genome best = null;
+			for (Genome g : genomes) {
+				if (g.getFitness() > maxFitness) {
+					maxFitness = g.getFitness();
+					best = g;
+				}
 			}
-		}
-		System.out.println("Finished with " + best);
-		heuristic.computeFitness(best);
+			System.out.println("gen: "+ currentGeneration +" best with " + best);
+			
+		} while (currentGeneration < maxGeneration && !heuristic.checkStoppingCriteria(this));
+//		float maxFitness = Float.MIN_VALUE;
+//		Genome best = null;
+//		for (Genome g : genomes) {
+//			if (g.getFitness() > maxFitness) {
+//				maxFitness = g.getFitness();
+//				best = g;
+//			}
+//		}
+//		System.out.println("Finished with " + best);
+//		heuristic.computeFitness(best);
 	}
 	
 	public ArrayList<Genome> getGenomes() {

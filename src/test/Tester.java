@@ -60,7 +60,7 @@ public class Tester {
 					public boolean checkStoppingCriteria(Core core) {
 						Genome best = Collections.max(core.getGenomes());
 //						System.out.println(best);
-						return best.getFitness() >= 3.99999999;
+						return best.getFitness() >= 3.99999;
 					}
 		}.initialize(), 100, 10000000);
 	}
