@@ -104,7 +104,7 @@ public class Core {
 				best = g;
 			}
 		}
-		System.out.println("Finished with " + best);
+		System.out.println("Finished with " + best + " in " + currentGeneration + " generations");
 		heuristic.computeFitness(best);
 	}
 	

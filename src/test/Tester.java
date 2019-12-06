@@ -17,13 +17,13 @@ public class Tester {
 
 	public static void main(String[] args) {
 		Core core = new Core();
-		core.initialize(2, 1, ActivationFunction.LINEAR, ActivationFunction.TANH,
+		core.initialize(2, 1, ActivationFunction.LINEAR, ActivationFunction.SIGMOID,
 				KillMethod.BOTTOM_HALF, BreedMethod.PERCENTILE, MutateMethod.PRESERVE_OLD,
 				new NEATHeuristic() {
 					ArrayList<ArrayList<Float>> inputs = new ArrayList<>();
 					ArrayList<Float> outputs = new ArrayList<>();
 					public NEATHeuristic initialize() {
-						//OR FUNCTION
+						//XOR FUNCTION
 						ArrayList<Float> in = new ArrayList<>();
 						in.add(0f);
 						in.add(0f);
@@ -32,12 +32,12 @@ public class Tester {
 						in = new ArrayList<>();
 						in.add(0f);
 						in.add(1f);
-						outputs.add(1f);
+						outputs.add(0f);
 						inputs.add(in);
 						in = new ArrayList<>();
 						in.add(1f);
 						in.add(0f);
-						outputs.add(1f);
+						outputs.add(0f);
 						inputs.add(in);
 						in = new ArrayList<>();
 						in.add(1f);
@@ -52,17 +52,17 @@ public class Tester {
 						float errorSum = 0;
 						for (int i = 0; i < inputs.size(); i++) {
 							ArrayList<Float> output = genome.computeOutput(inputs.get(i));
-							errorSum += (float)Math.abs(output.get(0) - outputs.get(i));
+							errorSum += (float)Math.abs(output.get(0) - outputs.get(i)) > .5 ? 1 : 0;
 						}
 						return 4 - errorSum;
 					}
 					@Override
 					public boolean checkStoppingCriteria(Core core) {
 						Genome best = Collections.max(core.getGenomes());
-//						System.out.println(best);
+						System.out.println(best);
 						return best.getFitness() >= 3.99999999;
 					}
-		}.initialize(), 100, 10000000);
+		}.initialize(), 100, 5);
 	}
 	
 }
