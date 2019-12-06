@@ -158,14 +158,13 @@ public class Genome implements Comparable<Genome> {
 		if (randomize) {
 			//If randomized, select for each disjoint and excess ConnectionGene whether to add it to the child or not
 			for (ConnectionGene cg : betterParentConnections.values()) {
-
-				if (Constants.rand.nextBoolean()) {
+				if (Constants.rand.nextBoolean()) {					
 					if (!child.nodeInputs.containsKey(cg.getInput()))
 						child.nodeInputs.put(cg.getInput(), new ArrayList<>());
 					if (!child.nodeInputs.containsKey(cg.getOutput()))
 						child.nodeInputs.put(cg.getOutput(), new ArrayList<>());
 					
-					if (!child.containsPath(cg.getOutput(), cg.getInput())) {
+					if (!child.containsPath(cg.getOutput(), cg.getInput())) {						
 						child.connections.add(cg);
 						if (!child.nodes.contains(cg.getInput()))
 							child.nodes.add(cg.getInput());
@@ -176,15 +175,14 @@ public class Genome implements Comparable<Genome> {
 				}
 			}
 			
-			for (ConnectionGene cg : worseParentConnections.values()) {
-				
-				if (Constants.rand.nextBoolean()) {
+			for (ConnectionGene cg : worseParentConnections.values()) {				
+				if (Constants.rand.nextBoolean()) {		
 					if (!child.nodeInputs.containsKey(cg.getInput()))
 						child.nodeInputs.put(cg.getInput(), new ArrayList<>());
 					if (!child.nodeInputs.containsKey(cg.getOutput()))
 						child.nodeInputs.put(cg.getOutput(), new ArrayList<>());
 					
-					if (!child.containsPath(cg.getOutput(), cg.getInput())) {
+					if (!child.containsPath(cg.getOutput(), cg.getInput())) {						
 						child.connections.add(cg);
 						if (!child.nodes.contains(cg.getInput()))
 							child.nodes.add(cg.getInput());
@@ -197,14 +195,25 @@ public class Genome implements Comparable<Genome> {
 		} else {
 			
 			//If not, add all better parent excess and disjoint ConnectionGenes to the child
-			child.connections.addAll(betterParentConnections.values());
+			//TODO: clean.
 			
-			for (ConnectionGene cg : child.connections) {
-				if (!child.nodes.contains(cg.getInput()))
-					child.nodes.add(cg.getInput());
-				if (!child.nodes.contains(cg.getOutput()))
-					child.nodes.add(cg.getOutput());
+			for(ConnectionGene cg : betterParentMatchings.values()) {
+				if(!child.containsPath(cg.getInput(), cg.getOutput())) {
+					child.connections.add(cg);
+					if (!child.nodes.contains(cg.getInput()))
+						child.nodes.add(cg.getInput());
+					if (!child.nodes.contains(cg.getOutput()))
+						child.nodes.add(cg.getOutput());
+				}
 			}
+//			child.connections.addAll(betterParentConnections.values());
+//			
+//			for (ConnectionGene cg : child.connections) {
+//				if (!child.nodes.contains(cg.getInput()))
+//					child.nodes.add(cg.getInput());
+//				if (!child.nodes.contains(cg.getOutput()))
+//					child.nodes.add(cg.getOutput());
+//			}
 			
 			for (NodeGene n : child.nodes) {
 				if (!child.nodeInputs.containsKey(n)) {

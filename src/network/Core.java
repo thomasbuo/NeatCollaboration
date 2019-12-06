@@ -95,6 +95,16 @@ public class Core {
 			mutateMethod.mutate(this);
 			System.out.println("Finished Mutating");
 			currentGeneration++;
+			//view best of generation
+			float maxFitness = Float.MIN_VALUE;
+			Genome best = null;
+			for (Genome g : genomes) {
+				if (g.getFitness() > maxFitness) {
+					maxFitness = g.getFitness();
+					best = g;
+				}
+			}
+			heuristic.computeFitness(best);
 		} while (currentGeneration < maxGeneration && !heuristic.checkStoppingCriteria(this));
 		float maxFitness = Float.MIN_VALUE;
 		Genome best = null;
