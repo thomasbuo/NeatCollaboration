@@ -194,26 +194,15 @@ public class Genome implements Comparable<Genome> {
 			}
 		} else {
 			
-			//If not, add all better parent excess and disjoint ConnectionGenes to the child
-			//TODO: clean.
 			
-			for(ConnectionGene cg : betterParentMatchings.values()) {
-				if(!child.containsPath(cg.getInput(), cg.getOutput())) {
-					child.connections.add(cg);
-					if (!child.nodes.contains(cg.getInput()))
-						child.nodes.add(cg.getInput());
-					if (!child.nodes.contains(cg.getOutput()))
-						child.nodes.add(cg.getOutput());
-				}
-			}
-//			child.connections.addAll(betterParentConnections.values());
+			child.connections.addAll(betterParentConnections.values());
 //			
-//			for (ConnectionGene cg : child.connections) {
-//				if (!child.nodes.contains(cg.getInput()))
-//					child.nodes.add(cg.getInput());
-//				if (!child.nodes.contains(cg.getOutput()))
-//					child.nodes.add(cg.getOutput());
-//			}
+			for (ConnectionGene cg : child.connections) {
+				if (!child.nodes.contains(cg.getInput()))
+					child.nodes.add(cg.getInput());
+				if (!child.nodes.contains(cg.getOutput()))
+					child.nodes.add(cg.getOutput());
+			}
 			
 			for (NodeGene n : child.nodes) {
 				if (!child.nodeInputs.containsKey(n)) {
